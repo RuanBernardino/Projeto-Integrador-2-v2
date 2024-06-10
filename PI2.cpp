@@ -8,11 +8,17 @@
 typedef struct {
     int CRM;
     char nome[50];
+    char especialidade[50];
 } Medico;
 
 typedef struct {
     int codigo;
     char nome[50];
+    char dataNascimento[11]; 
+    char sexo;
+    char endereco[100];
+    char telefone[15];
+    char email[50];
 } Paciente;
 
 typedef struct {
@@ -35,6 +41,27 @@ typedef struct {
     char data[50];
     char hora[10];
 } ProcedimentoRealizado;
+
+int validaNumero(char* str) {
+    for (int i = 0; i < strlen(str); i++) 
+	{
+        if (!isdigit(str[i])) 
+		{
+            return 0;
+        }
+    }
+    return 1;
+}
+int validaTexto(char* str) {
+    for (int i = 0; i < strlen(str); i++) 
+	{
+        if (!isalpha(str[i])) 
+		{
+            return 0;
+        }
+    }
+    return 1;
+}
 
 void excluiProcedimento() {
 	fflush(stdin);
@@ -118,7 +145,6 @@ void excluiPaciente() {
                 }
                 fclose(registroArquivo);
             }
-
             if (procedimentoAssociado) 
 			{
                 printf("Não é possível excluir o paciente, pois há procedimentos associados a ele.\n");
@@ -135,7 +161,6 @@ void excluiPaciente() {
                         fwrite(&paciente, sizeof(Paciente), 1, temp);
                     }
                 }
-
                 fclose(arquivo);
                 fclose(temp);
                 remove("pacientes.bin");
@@ -226,11 +251,14 @@ void relaProce() {
 	else 
 	{
         printf("Relatório de Procedimentos:\n");
-        while (fread(&procedimento, sizeof(Procedimento), 1, arquivo) == 1) 
-		{
-            printf("Código: %d, Descrição: %s\n", procedimento.codigo, procedimento.descricao);
+        printf("---------------------------------------------------\n");
+        printf("| Código    | Descrição                           |\n");
+        printf("---------------------------------------------------\n");
+        while (fread(&procedimento, sizeof(Procedimento), 1, arquivo) == 1) {
+            printf("| %d | %s |\n", procedimento.codigo, procedimento.descricao);
         }
         fclose(arquivo);
+        printf("---------------------------------------------------\n");
         printf("Pressione qualquer tecla para retornar ao menu...");
         getch();
     }
@@ -250,11 +278,15 @@ void relaPaci() {
 	else 
 	{
         printf("Relatório de Pacientes:\n");
+        printf("-------------------------------------------------------------\n");
+        printf("| Código | Nome    | Data Nascimento | Sexo | Endereço             | Telefone       | Email            |\n");
+        printf("-------------------------------------------------------------\n");
         while (fread(&paciente, sizeof(Paciente), 1, arquivo) == 1) 
 		{
-            printf("Código: %d, Nome: %s\n", paciente.codigo, paciente.nome);
+            printf("| %d | %s | %s | %c | %s | %s | %s |\n",paciente.codigo, paciente.nome, paciente.dataNascimento, paciente.sexo, paciente.endereco, paciente.telefone, paciente.email);
         }
         fclose(arquivo);
+        printf("-------------------------------------------------------------\n");
         printf("Pressione qualquer tecla para retornar ao menu...");
         getch();
     }
@@ -274,11 +306,15 @@ void relaMedi() {
 	else 
 	{
         printf("Relatório de Médicos:\n");
+        printf("--------------------------------------------------\n");
+        printf("| CRM       | Nome              | Especialidade    |\n");
+        printf("--------------------------------------------------\n");
         while (fread(&medico, sizeof(Medico), 1, arquivo) == 1) 
 		{
-            printf("CRM: %d, Nome: %s\n", medico.CRM, medico.nome);
+            printf("| %d | %s | %s |\n", medico.CRM, medico.nome, medico.especialidade);
         }
         fclose(arquivo);
+        printf("--------------------------------------------------\n");
         printf("Pressione qualquer tecla para retornar ao menu...");
         getch();
     }
@@ -311,7 +347,6 @@ void relaLanca() {
         getch();
     }
 }
-
 int medicoExiste(int CRM) {
 	fflush(stdin);
     FILE *arquivo;
@@ -450,95 +485,155 @@ void regisproppaci() {
 }
 void cadProce() {
 	fflush(stdin);
-    FILE *arquivo;
     Procedimento procedimento;
-    arquivo = fopen("procedimentos.bin", "ab");
+    FILE *arquivo;
     system("cls");
     printf("=======FisioTec======\n");
-    if (arquivo == NULL) {
-        printf("Erro ao abrir o arquivo de procedimentos.\n");
+    arquivo = fopen("procedimentos.bin", "ab");
+    if (arquivo == NULL) 
+	{
+        printf("Erro ao abrir o arquivo.\n");
         getch();
     } 
 	else 
 	{
+        char codigo[10];
         printf("Informe o código do procedimento: ");
-        scanf("%d", &procedimento.codigo);
-        if (procedimentoExiste(procedimento.codigo)) {
-            printf("Já existe um procedimento com o código %d.\n", procedimento.codigo);
-            fclose(arquivo);
-            getch();
+        scanf("%s", codigo);
+        while (!validaNumero(codigo)) 
+		{
+            printf("Código inválido. Informe novamente: ");
+            scanf("%s", codigo);
         }
-        else
-        {
-			printf("Informe a descrição do procedimento: ");
-	        scanf("%s", procedimento.descricao);
-	        fwrite(&procedimento, sizeof(Procedimento), 1, arquivo);
-	        fclose(arquivo);
-	        printf("Procedimento cadastrado com sucesso!\n");
-	        getch();
-		}
-        
+        while (procedimentoExiste(atoi(codigo))) 
+		{
+            printf("Já existe um procedimento com o código %s. Informe outro código: ", codigo);
+            scanf("%s", codigo);
+            while (!validaNumero(codigo)) 
+			{
+                printf("Código inválido. Informe novamente: ");
+                scanf("%s", codigo);
+            }
+        }
+        procedimento.codigo = atoi(codigo);
+        printf("Informe a descrição do procedimento: ");
+        scanf(" %s", procedimento.descricao);
+        fwrite(&procedimento, sizeof(Procedimento), 1, arquivo);
+        fclose(arquivo);
+        printf("Procedimento cadastrado com sucesso!\n");
+        getch();
     }
 }
 void cadPaci() {
 	fflush(stdin);
-    FILE *arquivo;
     Paciente paciente;
-    arquivo = fopen("pacientes.bin", "ab");
+    FILE *arquivo;
     system("cls");
     printf("=======FisioTec======\n");
-    if (arquivo == NULL) {
-        printf("Erro ao abrir o arquivo de pacientes.\n");
+    arquivo = fopen("pacientes.bin", "ab");
+    if (arquivo == NULL) 
+	{
+        printf("Erro ao abrir o arquivo.\n");
         getch();
     } 
 	else 
 	{
+        char codigo[10];
         printf("Informe o código do paciente: ");
-        scanf("%d", &paciente.codigo);
-        if (pacienteExiste(paciente.codigo)) {
-            printf("Já existe um paciente com o código %d.\n", paciente.codigo);
-            fclose(arquivo);
-            getch();
+        scanf("%s", codigo);
+        while (!validaNumero(codigo)) 
+		{
+            printf("Código inválido. Informe novamente: ");
+            scanf("%s", codigo);
         }
-        else
-	    {	
-			printf("Informe o nome do paciente: ");
-	        scanf("%s", paciente.nome);
-	        fwrite(&paciente, sizeof(Paciente), 1, arquivo);
-	        fclose(arquivo);
-	        printf("Paciente cadastrado com sucesso!\n");
-	        getch();
-		}
-        
+        while (pacienteExiste(atoi(codigo))) 
+		{
+            printf("Já existe um paciente com o código %s. Informe outro código: ", codigo);
+            scanf("%s", codigo);
+            while (!validaNumero(codigo)) 
+			{
+                printf("Código inválido. Informe novamente: ");
+                scanf("%s", codigo);
+            }
+        }
+        paciente.codigo = atoi(codigo);
+        printf("Informe o nome do paciente: ");
+        scanf(" %s", paciente.nome);
+        while (!validaTexto(paciente.nome)) 
+		{
+            printf("Nome inválido. Informe novamente: ");
+            scanf(" %s", paciente.nome);
+        }
+        printf("Informe a data de nascimento (DD/MM/AAAA): ");
+        scanf("%s", paciente.dataNascimento);
+        printf("Informe o sexo (M/F): ");
+        fflush(stdin);
+        scanf("%c", &paciente.sexo);
+        paciente.sexo = toupper(paciente.sexo); 
+        while (paciente.sexo != 'M' && paciente.sexo != 'F') 
+		{
+            printf("Sexo inválido. Informe novamente (M/F): ");
+            fflush(stdin);
+            scanf("%c", &paciente.sexo);
+            paciente.sexo = toupper(paciente.sexo); 
+        }
+        printf("Informe o endereço: ");
+        scanf(" %s", paciente.endereco);
+        printf("Informe o número de telefone (no formato (99) 99999-9999): ");
+        scanf(" %s", paciente.telefone);
+        printf("Informe o email: ");
+        scanf(" %s", paciente.email);
+        fwrite(&paciente, sizeof(Paciente), 1, arquivo);
+        fclose(arquivo);
+        printf("Paciente cadastrado com sucesso!\n");
+        getch();
     }
 }
 void cadMedi() {
 	fflush(stdin);
-    FILE *arquivo;
     Medico medico;
-    arquivo = fopen("medicos.bin", "ab");
+    FILE *arquivo;
     system("cls");
     printf("=======FisioTec======\n");
+    arquivo = fopen("medicos.bin", "ab");
     if (arquivo == NULL) {
-        printf("Erro ao abrir o arquivo de médicos.\n");
+        printf("Erro ao abrir o arquivo.\n");
         getch();
-    } else {
+    } 
+	else 
+	{
+        char CRM[10];
         printf("Informe o CRM do médico: ");
-        scanf("%d", &medico.CRM);
-        if (medicoExiste(medico.CRM)) {
-            printf("Já existe um médico com o CRM %d.\n", medico.CRM);
-            fclose(arquivo);
-            getch();
+        scanf("%s", CRM);
+        while (!validaNumero(CRM)) 
+		{
+            printf("CRM inválido. Informe novamente: ");
+            scanf("%s", CRM);
         }
-        else
-        {
-        	printf("Informe o nome do médico: ");
-	        scanf("%s", medico.nome);
-	        fwrite(&medico, sizeof(Medico), 1, arquivo);
-	        fclose(arquivo);
-	        printf("Médico cadastrado com sucesso!\n");
-	        getch();
-		}     
+        while (medicoExiste(atoi(CRM))) 
+		{
+            printf("Já existe um médico com o CRM %s. Informe outro CRM: ", CRM);
+            scanf("%s", CRM);
+            while (!validaNumero(CRM)) 
+			{
+                printf("CRM inválido. Informe novamente: ");
+                scanf("%s", CRM);
+            }
+        }       
+        medico.CRM = atoi(CRM);
+        printf("Informe o nome do médico: ");
+        scanf("%s", medico.nome);
+        while (!validaTexto(medico.nome)) 
+		{
+            printf("Nome inválido. Informe novamente: ");
+            scanf("%s", medico.nome);
+        }
+        printf("Informe a especialidade do médico: ");
+        scanf(" %s", medico.especialidade);
+        fwrite(&medico, sizeof(Medico), 1, arquivo);
+        fclose(arquivo);
+        printf("Médico cadastrado com sucesso!\n");
+        getch();
     }
 }
 void menu() {
@@ -589,6 +684,15 @@ void menuE() {
     printf("3. Excluir Procedimento\n");
     printf("4. Voltar ao menu principal\n");
     printf("Opção: ");
+}
+void load()
+{
+printf("¦¦¦¦¦¦¦ ¦¦ ¦¦¦¦¦¦¦ ¦¦  ¦¦¦¦¦¦  ¦¦¦¦¦¦¦¦ ¦¦¦¦¦¦¦  ¦¦¦¦¦¦ \n");
+printf("¦¦      ¦¦ ¦¦      ¦¦ ¦¦    ¦¦    ¦¦    ¦¦      ¦¦      \n");
+printf("¦¦¦¦¦   ¦¦ ¦¦¦¦¦¦¦ ¦¦ ¦¦    ¦¦    ¦¦    ¦¦¦¦¦   ¦¦      \n");
+printf("¦¦      ¦¦      ¦¦ ¦¦ ¦¦    ¦¦    ¦¦    ¦¦      ¦¦      \n");
+printf("¦¦      ¦¦ ¦¦¦¦¦¦¦ ¦¦  ¦¦¦¦¦¦     ¦¦    ¦¦¦¦¦¦¦  ¦¦¦¦¦¦\n");
+Sleep(2500);
 }
 void executa() {
 	fflush(stdin);
@@ -675,6 +779,7 @@ void executa() {
 }
 int main() {
     setlocale(LC_ALL, "Portuguese");
+    load();   
     executa();
     return 0;
 }
